@@ -1,0 +1,247 @@
+#Import
+import tkinter as tk
+from tkinter import ttk
+from tkinter import filedialog
+import datetime 
+import random
+
+class MainWindow(tk.Tk):
+    def __init__(self):  
+        super().__init__() 
+        
+        self.geometry("800x800") 
+        self.title('Notebook') 
+        self.config(bg='light blue')
+        self.notebook = []
+        self.notes = [] 
+        # To Customize the buttons, and labels
+        self.style = ttk.Style()
+        self.style.configure('Custom.TButton', foreground='black')
+        
+        # Here is where to can enter your temporary Title
+        note_title_label = ttk.Label(self, text="Preview title:")
+        note_title_label.grid(row=0, column=0, padx=5, pady=5)
+        self.note_title = ttk.Entry(self)
+        self.note_title.grid(row=0, column=1, padx=5, pady=5)
+
+        # This is where the new notes will go after clicking the "new" button
+        note_text_label = ttk.Label(self, text="Notes:")
+        note_text_label.grid(row=1, column=0, padx=5, pady=5)
+        self.note_text = tk.Text(self)
+        self.note_text.grid(row=1, column=1, padx=5, pady=5)
+        
+        ## Here is where we create the buttons for the Main Window
+        # This button takes you to another window where to can create a new button for your notes
+        self.new_button = ttk.Button(self, text="New", command=self.new_note, style='Custom.TButton')
+        self.new_button.grid(row=2, column=0, padx=5, pady=5)
+        
+        # Here were you can bring in notes you another saved, and look at them
+        self.open_button = ttk.Button(self, text="Open", command=self.open_notebook, style='Custom.TButton')
+        self.open_button.grid(row=2, column=1, padx=5, pady=5)
+        
+        # This is where you save all the notes you created into one file.
+        self.save_button = ttk.Button(self, text="Save", command=self.save_notebook, style='Custom.TButton')
+        self.save_button.grid(row=2, column=2, padx=5, pady=5)
+        
+        self.color_button = ttk.Button(self, text="Color", command=self.color_change, style='Custom.TButton')
+        self.color_button.grid(row=3, column=2, padx=5, pady=5)
+        
+        # a frame for your new buttons
+        self.note_list_frame = tk.Frame(self)
+        self.note_list_frame.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
+        self.note_buttons = []
+        self.restart_button = ttk.Button(self, text="Restart", command=self.restart, style='Custom.TButton')
+        self.restart_button.grid(row=3, column=0, padx=5, pady=5, sticky='ew')
+
+    def restart(self):
+        self.destroy()  # Close the current window
+        main_window = MainWindow() 
+        main_window.mainloop()  
+        
+    def color_change(self):
+        
+        colors = ["#FFC0CB", "#ADD8E6", "#00008B", "#FFFFFF", "#FF0000", "#000000"]
+        selected_color = random.choice(colors)
+        self.config(bg=selected_color)
+        
+        
+
+        
+        
+    def new_note(self):
+        note_window = NoteForm(self, self.notebook, self.update_note_list)
+
+    # Here is the command that lets you open the buttons.
+    def open_notebook(self):
+        filepath = filedialog.askopenfilename(initialdir="C:\\Users\\samuelnnadijr\\Samuel INST326 Note\\Notes",
+                                         filetypes=[("text files", "*.txt"), 
+                                                    ("csv files", ".csv"),
+                                         ("all files", "*.*")])
+        if filepath:
+            with open(filepath, "r") as file:
+                for line in file:
+                    title = line.strip()
+                    text = file.readline().strip()
+                    meta = file.readline().strip()
+                    self.notebook.append(MakeNote({"title": title, "text": text, "meta": meta}))
+                self.update_note_list()
+    #Here is the command that lets you save the buttons.
+    def save_notebook(self):
+        filepath = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=(("Text files", "*.txt"), ("All files", "*.*")))
+        
+        if filepath:
+            with open(filepath, "w") as file:
+                for note in self.notebook:
+                    file.write(f"{note.title}\n{note.text}\n{note.meta}\n")
+                    
+            
+    def update_note_list(self):
+        # Clears existing buttons, it's like a reset to a gaame
+        for button in self.note_buttons:
+            button.destroy()
+        self.note_buttons.clear()
+
+        # Creates new buttons for each note
+        for index, note in enumerate(self.notebook):
+            button = ttk.Button(self.note_list_frame, text=note.title, style='Custom.TButton',
+                                command=lambda i=index: self.display(i))
+            button.grid(row=index, column=0, padx=5, pady=5, sticky="ew")
+            self.note_buttons.append(button)
+    # This helps display the notes you created
+    def display(self, index):
+        selected_note = self.notebook[index]
+        popup = tk.Toplevel()
+        popup.title(selected_note.title)
+       # text_wg = tk.Text(popup)
+       # text_wg.insert(tk.END, f"Title: {selected_note.title}\n")
+       # text_wg.insert(tk.END, f"Text: {selected_note.text}\n")
+       # text_wg.insert(tk.END, f"Meta: {selected_note.meta}\n")
+        
+        #############################################
+        #############################################
+        # Create Entry widget for title
+        title_label = ttk.Label(popup, text="Title:")
+        title_label.grid(row=0, column=0, padx=5, pady=5)
+        title_entry = ttk.Entry(popup, text=selected_note.title)
+        title_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        # Create Text widget for text content
+        text_label = ttk.Label(popup, text="Text:")
+        text_label.grid(row=1, column=0, padx=5, pady=5)
+        text_entry = tk.Text(popup)
+        text_entry.insert(tk.END, selected_note.text)
+        text_entry.grid(row=1, column=1, padx=5, pady=5)
+        
+        # For now 
+        meta_entry = tk.Text(popup)
+        meta_entry.insert(tk.END, selected_note.meta)
+        meta_entry.grid(row=1, column=2, padx=5, pady=5)
+        
+        # To save changes
+        def save_changes():
+            selected_note.title = title_entry.get()
+            selected_note.edit(title_entry.get(), text_entry.get("1.0", tk.END).strip())  # Edited to use edit method
+            self.update_note_list()
+            popup.destroy()
+        save_button = ttk.Button(popup, text="Save Changes", command=save_changes, style='Custom.TButton')
+        save_button.grid(row=2, column=0, columnspan=2, padx=5, pady=5)
+
+        # Button to view edit history
+        def view_history():
+            history_popup = tk.Toplevel()
+            history_popup.title("Edit History")
+            history_text = tk.Text(history_popup)
+            for edit_time, edit_title, edit_text in selected_note.edit_history:
+                history_text.insert(tk.END, f"{edit_time}: Title: {edit_title}, Text: {edit_text}\n\n")
+            history_text.config(state=tk.DISABLED)
+            history_text.pack()
+
+        history_button = ttk.Button(popup, text="View Edit History", command=view_history, style='Custom.TButton')
+        history_button.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
+
+        
+         #############################################
+         #############################################
+        #text_wg.pack()
+
+class NoteForm(tk.Toplevel):
+    
+    def __init__(self, master, notebook, update_note_list): # initialize the new object
+        super().__init__(master) # initialize it as a toplevel window
+
+        self.update_note_list = update_note_list
+
+        note_title_label = ttk.Label(self, text="Title:")
+        note_title_label.grid(row=0, column=0, padx=5, pady=5)
+        self.note_title = ttk.Entry(self)
+        self.note_title.grid(row=0, column=1, padx=5, pady=5)
+
+        note_text_label = ttk.Label(self, text="Text:")
+        note_text_label.grid(row=1, column=0, padx=5, pady=5)
+        self.note_text = tk.Text(self)
+        self.note_text.grid(row=1, column=1, padx=5, pady=5)
+        
+        # Here when you hit submit, it saves what put in, into a button, and added to a list.
+        submit_button = ttk.Button(self, text="Submit", command=self.submit, style='Custom.TButton')
+        submit_button.grid(row=2, column=0, columnspan=2, padx=5, pady=5)
+        
+
+        note_title_label = ttk.Label(self, text="Links:")
+        note_title_label.grid(row=3, column=0, padx=5, pady=5)
+        note_link = tk.Entry(self, width=80)
+        note_link.grid(padx=10, pady=10, row=3, column=1, sticky='w')
+        note_link.insert(0, 'If there is a link with this note enter it here. Else, enter "None"') 
+
+        # create our note link entry field
+        note_title_label = ttk.Label(self, text="Tags :")
+        note_title_label.grid(row=4, column=0, padx=5, pady=5)
+        note_tags = tk.Entry(self, width=80)
+        note_tags.grid(padx=10, pady=10, row=4, column=1, sticky='w')
+        note_tags.insert(0, 'Enter #tags, separated by commas') 
+        self.notebook = notebook
+    # Here sumbits gets the title, text, and meta 
+    def submit(self):
+        created = datetime.datetime.now()
+        local_now = created.astimezone() # shows the local time and the GMT offset
+        local_tz = local_now.tzinfo 
+        title = self.note_title.get()
+        text = self.note_text.get("1.0", tk.END).strip()
+        meta = f'created {created}, {local_tz}'
+        new_note = MakeNote({"title": title, "text": text, "meta": meta})
+        self.notebook.append(new_note)
+        self.update_note_list()
+        self.destroy()
+        
+#Transforms dictionary with data into a new note object
+class MakeNote():
+    def __init__(self, note_dict):
+        self.title = note_dict["title"]
+        self.text = note_dict["text"]
+        self.meta = note_dict["meta"]
+        self.edit_history = []
+        
+    def edit(self, new_title, new_text):
+        edit_time = datetime.datetime.now()
+        self.edit_history.append((edit_time, self.title, self.text))
+        self.title = new_title
+        self.text = new_text
+     
+class CodeSnippet:
+    def __init__(self, snippet_dict):
+        
+        self.snippet.title = snippet_info["title"]
+        self.snippet_code = snippet_info["code"]
+        self.snippet_language = snippet_info["language"]
+        self.snippet_description = snippet_info["description"]
+        self.snippet_meta = snippet_info["meta"] 
+        
+    def create_snippet(self, title, code):
+        
+        snippet = f"### {title}:\n\n```python\n{code}\n```\n"
+        return snippet
+
+if __name__ == '__main__':
+    
+    main_window = MainWindow() 
+
+    main_window.mainloop()
